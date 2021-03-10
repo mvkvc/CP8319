@@ -16,15 +16,15 @@ def categorical_sample(prob_n, np_random):
 class DiscreteEnv(Env):
 
     """
-    has the following members
-    - ns: number of states
-    - na: number of actions
-    - p: transitions (*)
+    Has the following members
+    - nS: number of states
+    - nA: number of actions
+    - P: transitions (*)
     - isd: initial state distribution (**)
 
     (*) dictionary dict of dicts of lists, where
-      p[s][a] == [(probability, nextstate, reward, done), ...]
-    (**) list or array of length ns
+      P[s][a] == [(probability, nextstate, reward, done), ...]
+    (**) list or array of length nS
 
 
     """

@@ -1,9 +1,9 @@
 ### MDP Value Iteration and Policy Iteration
 
+# %%
 import numpy as np
 import gym
 import time
-from itertools import product
 
 np.set_printoptions(precision=3)
 
@@ -40,7 +40,7 @@ the parameters P, nS, nA, gamma are defined as follows:
         Discount factor. Number in range [0, 1)
 """
 
-
+# %%
 def policy_evaluation(P, nS, nA, policy, gamma=0.9, tol=1e-3):
     """Evaluate the value function from a given policy.
     Parameters
@@ -85,6 +85,7 @@ def policy_evaluation(P, nS, nA, policy, gamma=0.9, tol=1e-3):
     return value_function
 
 
+# %%
 def policy_improvement(P, nS, nA, value_from_policy, policy, gamma=0.9):
     """Given the value function from policy improve the policy.
     Parameters
@@ -121,6 +122,7 @@ def policy_improvement(P, nS, nA, value_from_policy, policy, gamma=0.9):
     return new_policy
 
 
+# %%
 def policy_iteration(P, nS, nA, gamma=0.9, tol=10e-3):
     """Runs policy iteration.
     You should call the policy_evaluation() and policy_improvement() methods to
@@ -153,6 +155,7 @@ def policy_iteration(P, nS, nA, gamma=0.9, tol=10e-3):
     return value_function, policy
 
 
+# %%
 def value_iteration(P, nS, nA, gamma=0.9, tol=1e-3):
     """
     Learn value function and policy by using value iteration method for a given
@@ -201,6 +204,7 @@ def value_iteration(P, nS, nA, gamma=0.9, tol=1e-3):
     return value_function, policy_improvement(P, nS, nA, value_function, policy, gamma)
 
 
+# %%
 def render_single(env, policy, max_steps=100):
     """
     This function does not need to be modified
@@ -212,7 +216,7 @@ def render_single(env, policy, max_steps=100):
       attributes.
     Policy: np.array of shape [env.nS]
       The action to take at a given state
-  """
+    """
 
     episode_reward = 0
     ob = env.reset()
@@ -231,6 +235,7 @@ def render_single(env, policy, max_steps=100):
         print("Episode reward: %f" % episode_reward)
 
 
+# %%
 # Edit below to run policy and value iteration on different environments and
 # visualize the resulting policies in action!
 # You may change the parameters in the functions below
