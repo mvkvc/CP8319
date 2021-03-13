@@ -1,14 +1,18 @@
+# %%
 ### MDP Value Iteration and Policy Iteration
+
 
 import numpy as np
 import gym
 import time
-from lake_envs import *
+from cps824_assignment2.src.lake_envs import *
 
 np.set_printoptions(precision=3)
 
 hole_states = [7, 9, 12]  # the states in the environment with holes
 
+
+# %%
 def sample_action(policy, state):
     """
     Given a stochastic policy (can also be deterministic where only one action has probability 1),
@@ -35,6 +39,8 @@ def sample_action(policy, state):
     all_actions = np.arange(nA)
     return np.random.choice(all_actions, p=policy[state])
 
+
+# %%
 def take_one_step(env, policy, state):
     """
     This function takes one step in the environment according to the stochastic policy.
@@ -65,6 +71,7 @@ def take_one_step(env, policy, state):
     return action, reward, new_state, done
 
 
+# %%
 def generate_episode(env, policy, max_steps=500):
     """
     Since Monte Carlo methods are based on learning from episodes write a function `random_episode`
@@ -83,7 +90,7 @@ def generate_episode(env, policy, max_steps=500):
     -------
         episode: list of [(state, action, reward)] triplet.
             For example, [(0,1,0),(4,2,0)] indicates that in the first time
-            we were in state 0 took action 1 and observed reward 0
+            step we were in state 0 took action 1 and observed reward 0
             (it also means we transitioned to state 4). Similarly, in the
             second time step we are in state 4 took action 2 and observed reward 0.
 
@@ -92,10 +99,22 @@ def generate_episode(env, policy, max_steps=500):
     curr_state = env.reset()  # reset the environment and place the agent in the start square
     ############################
     # YOUR IMPLEMENTATION HERE #
-
+    num_steps = 0
+    while num_steps < max_steps:
+        env.render()
+        time.sleep(1)
+        action, reward, new_state, done = take_one_step(env, policy, curr_state)
+        episode.append((curr_state, action, reward))
+        if done:
+            print("Episode finished after {} timesteps".format(num_steps + 1))
+            break
+        curr_state = new_state
+        num_steps += 1
     ############################
     return episode
 
+
+# %%
 def generate_returns(episode, gamma=0.9):
     """
     Given an episode, generate the total return from each step in the episode based on the
@@ -132,11 +151,17 @@ def generate_returns(episode, gamma=0.9):
     # using a vector of powers of gamma along with `np.dot` will
     # make this much easier to implement in a few lines of code.
     # You don't need to use this approach however and use whatever works for you. #
-
+    returns = [j[2] for j in episode]
+    for i in range(len(epi_returns)):
+        powers = np.arange(0, len(epi_returns) - i) + 1
+        gamma_sq = gamma ** powers
+        step_returns = returns[i:]
+        epi_returns[i] = np.dot(step_returns, gamma_sq ** powers)
     ############################
     return epi_returns
 
 
+# %%
 def mc_policy_evaluation(env, policy, Q_value, n_visits, gamma=0.9):
     """Update the current Q_values and n_visits by generating one random episode
     and using the given policy and the Monte Carlo first-visit approach.
@@ -169,10 +194,22 @@ def mc_policy_evaluation(env, policy, Q_value, n_visits, gamma=0.9):
     visit_flag = np.zeros((nS, nA))
     ############################
     # YOUR IMPLEMENTATION HERE #
-
+    # Q value
+    # N visit
+    total_return = 0
+    value_function = []
+    for i in range(len(episode)):  # For every episode
+        if np.sum(visit_flag[episode[i, 1]]) < 1:  # Check if visited before
+            action = episode[i, 0]
+            state = episode[i, 1]
+            total_return += returns[i]
+            pass
+        n_visits[action, state] += 1
     ############################
     return Q_value, n_visits
 
+
+# %%
 def epsilon_greedy_policy_improve(Q_value, nS, nA, epsilon):
     """Given the Q_value function and epsilon generate a new epsilon-greedy policy.
     IF TWO ACTIONS HAVE THE SAME MAXIMUM Q VALUE, THEY MUST BOTH BE EXECUTED EQUALLY LIKELY.
@@ -207,6 +244,7 @@ def epsilon_greedy_policy_improve(Q_value, nS, nA, epsilon):
     return new_policy
 
 
+# %%
 def mc_glie(env, iterations=1000, gamma=0.9):
     """This function implements the first-visit Monte Carlo GLIE policy iteration for finding
     the optimal policy.
@@ -230,7 +268,7 @@ def mc_glie(env, iterations=1000, gamma=0.9):
     nA = env.nA  # number of actions
     Q_value = np.zeros((nS, nA))
     n_visits = np.zeros((nS, nA))
-    policy = np.ones((env.nS,env.nA))/env.nA  # initially all actions are equally likely
+    policy = np.ones((env.nS, env.nA)) / env.nA  # initially all actions are equally likely
     epsilon = 1
     ############################
     # YOUR IMPLEMENTATION HERE #
@@ -241,6 +279,7 @@ def mc_glie(env, iterations=1000, gamma=0.9):
     return Q_value, det_policy
 
 
+# %%
 def td_sarsa(env, iterations=1000, gamma=0.9, alpha=0.1):
     """This function implements the temporal-difference SARSA policy iteration for finding
     the optimal policy.
@@ -266,7 +305,7 @@ def td_sarsa(env, iterations=1000, gamma=0.9, alpha=0.1):
     nS = env.nS  # number of states
     nA = env.nA  # number of actions
     Q_value = np.zeros((nS, nA))
-    policy = np.ones((env.nS,env.nA))/env.nA
+    policy = np.ones((env.nS, env.nA)) / env.nA
     epsilon = 1
     s_t1 = env.reset()  # reset the environment and place the agent in the start square
     a_t1 = sample_action(policy, s_t1)
@@ -279,6 +318,7 @@ def td_sarsa(env, iterations=1000, gamma=0.9, alpha=0.1):
     return Q_value, det_policy
 
 
+# %%
 def qlearning(env, iterations=1000, gamma=0.9, alpha=0.1):
     """This function implements the Q-Learning policy iteration for finding
     the optimal policy.
@@ -303,7 +343,7 @@ def qlearning(env, iterations=1000, gamma=0.9, alpha=0.1):
     nS = env.nS  # number of states
     nA = env.nA  # number of actions
     Q_value = np.zeros((nS, nA))
-    policy = np.ones((env.nS,env.nA))/env.nA
+    policy = np.ones((env.nS, env.nA)) / env.nA
     epsilon = 1
     s_t1 = env.reset()  # reset the environment and place the agent in the start square
     ############################
@@ -315,6 +355,7 @@ def qlearning(env, iterations=1000, gamma=0.9, alpha=0.1):
     return Q_value, det_policy
 
 
+# %%
 def render_single(env, policy, max_steps=100):
     """
       This function does not need to be modified
@@ -345,6 +386,8 @@ def render_single(env, policy, max_steps=100):
     else:
         print("Episode reward: %f" % episode_reward)
 
+
+# %%
 def test_performance(env, policy, nb_episodes=500, max_steps=500):
     """
       This function evaluate the success rate of the policy in reaching
@@ -373,17 +416,18 @@ def test_performance(env, policy, nb_episodes=500, max_steps=500):
                 sum_returns += reward
                 break
 
-    print("The success rate of the policy across {} episodes was {:.2f} percent.".format(nb_episodes,sum_returns/nb_episodes*100))
+    print("The success rate of the policy across {} episodes was {:.2f} percent.".format(nb_episodes,
+                                                                                         sum_returns / nb_episodes * 100))
 
 
-
+# %%
 # Edit below to run the model-free methods on different environments and
 # visualize the resulting policies in action!
 # You may change the parameters in the functions below
 if __name__ == "__main__":
     # comment/uncomment these lines to switch between deterministic/stochastic environments
     env = gym.make("Deterministic-4x4-FrozenLake-v0")
-    #env = gym.make("Stochastic-4x4-FrozenLake-v0")
+    # env = gym.make("Stochastic-4x4-FrozenLake-v0")
 
     print("\n" + "-" * 25 + "\nBeginning First-Visit Monte Carlo\n" + "-" * 25)
     Q_mc, policy_mc = mc_glie(env, iterations=1000, gamma=0.9)
