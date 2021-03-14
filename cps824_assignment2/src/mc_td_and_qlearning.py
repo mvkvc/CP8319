@@ -96,7 +96,9 @@ def generate_episode(env, policy, max_steps=500):
 
     """
     episode = []
-    curr_state = env.reset()  # reset the environment and place the agent in the start square
+    curr_state = (
+        env.reset()
+    )  # reset the environment and place the agent in the start square
     ############################
     # YOUR IMPLEMENTATION HERE #
     num_steps = 0
@@ -152,11 +154,11 @@ def generate_returns(episode, gamma=0.9):
     # make this much easier to implement in a few lines of code.
     # You don't need to use this approach however and use whatever works for you. #
     returns = [j[2] for j in episode]
-    for i in range(len(epi_returns)):
-        powers = np.arange(0, len(epi_returns) - i) + 1
+    for iter in range(len(epi_returns)):
+        powers = np.arange(0, len(epi_returns) - iter) + 1
         gamma_sq = gamma ** powers
-        step_returns = returns[i:]
-        epi_returns[i] = np.dot(step_returns, gamma_sq ** powers)
+        step_returns = returns[iter:]
+        epi_returns[iter] = np.dot(step_returns, gamma_sq ** powers)
     ############################
     return epi_returns
 
@@ -194,17 +196,15 @@ def mc_policy_evaluation(env, policy, Q_value, n_visits, gamma=0.9):
     visit_flag = np.zeros((nS, nA))
     ############################
     # YOUR IMPLEMENTATION HERE #
-    # Q value
-    # N visit
-    total_return = 0
-    value_function = []
-    for i in range(len(episode)):  # For every episode
-        if np.sum(visit_flag[episode[i, 1]]) < 1:  # Check if visited before
-            action = episode[i, 0]
-            state = episode[i, 1]
-            total_return += returns[i]
-            pass
-        n_visits[action, state] += 1
+    for iter in range(len(episode)):  # For every episode
+        state = episode[iter][0]
+        action = episode[iter][1]
+        n_visits[state, action] += 1
+        if visit_flag[state, action] < 1:  # Check if visited before
+            Q_value[state, action] = Q_value[state, action] + (
+                1 / n_visits[state, action]
+            ) * (returns[iter] - Q_value[state, action])
+        visit_flag[state, action] += 1
     ############################
     return Q_value, n_visits
 
@@ -239,8 +239,15 @@ def epsilon_greedy_policy_improve(Q_value, nS, nA, epsilon):
     # HINT: IF TWO ACTIONS HAVE THE SAME MAXIMUM Q VALUE, THEY MUST BOTH BE EXECUTED EQUALLY LIKELY.
     #     THIS IS IMPORTANT FOR EXPLORATION. This might prove useful:
     #     https://stackoverflow.com/questions/17568612/how-to-make-numpy-argmax-return-all-occurrences-of-the-maximum
-
-    ############################
+    # np.argwhere(a == np.amax(a)).flatten().tolist())
+    for state in range(len(nS)):
+        best_actions = (
+            np.argwhere(Q_value[state, :] == np.amax(Q_value[state, :]))
+            .flatten()
+            .tolist()
+        )
+        new_policy[state, best_actions] += (1 - epsilon) / len(best_actions)
+    ###################
     return new_policy
 
 
@@ -268,12 +275,18 @@ def mc_glie(env, iterations=1000, gamma=0.9):
     nA = env.nA  # number of actions
     Q_value = np.zeros((nS, nA))
     n_visits = np.zeros((nS, nA))
-    policy = np.ones((env.nS, env.nA)) / env.nA  # initially all actions are equally likely
+    policy = (
+        np.ones((env.nS, env.nA)) / env.nA
+    )  # initially all actions are equally likely
     epsilon = 1
     ############################
     # YOUR IMPLEMENTATION HERE #
     # HINT: Don't forget to decay epsilon according to GLIE
-
+    # Decay according to e = 1/i
+    for iter in range(0, iterations):
+        mc_policy_evaluation(env, policy, Q_value, n_visits, gamma=0.9)
+        epsilon_greedy_policy_improve(Q_value, nS, nA, epsilon)
+        epsilon = 1/iter+1
     ############################
     det_policy = np.argmax(Q_value, axis=1)
     return Q_value, det_policy
@@ -312,7 +325,7 @@ def td_sarsa(env, iterations=1000, gamma=0.9, alpha=0.1):
     ############################
     # YOUR IMPLEMENTATION HERE #
     # HINT: Don't forget to decay epsilon according to GLIE
-
+    for i in range(0, iterations)
     ############################
     det_policy = np.argmax(Q_value, axis=1)
     return Q_value, det_policy
@@ -358,16 +371,16 @@ def qlearning(env, iterations=1000, gamma=0.9, alpha=0.1):
 # %%
 def render_single(env, policy, max_steps=100):
     """
-      This function does not need to be modified
-      Renders policy once on environment. Watch your agent play!
+    This function does not need to be modified
+    Renders policy once on environment. Watch your agent play!
 
-      Parameters
-      ----------
-      env: gym.core.Environment
-        Environment to play on. Must have nS, nA, and P as
-        attributes.
-      Policy: np.array of shape [env.nS]
-        The action to take at a given state
+    Parameters
+    ----------
+    env: gym.core.Environment
+      Environment to play on. Must have nS, nA, and P as
+      attributes.
+    Policy: np.array of shape [env.nS]
+      The action to take at a given state
     """
 
     episode_reward = 0
@@ -380,7 +393,7 @@ def render_single(env, policy, max_steps=100):
         episode_reward += rew
         if done:
             break
-    env.render();
+    env.render()
     if not done:
         print("The agent didn't reach a terminal state in {} steps.".format(max_steps))
     else:
@@ -390,20 +403,20 @@ def render_single(env, policy, max_steps=100):
 # %%
 def test_performance(env, policy, nb_episodes=500, max_steps=500):
     """
-      This function evaluate the success rate of the policy in reaching
-      the goal.
+    This function evaluate the success rate of the policy in reaching
+    the goal.
 
-      Parameters
-      ----------
-      env: gym.core.Environment
-        Environment to play on. Must have nS, nA, and P as
-        attributes.
-      Policy: np.array of shape [env.nS]
-        The action to take at a given state
-      nb_episodes: int
-        number of episodes to evaluate over
-      max_steps: int
-        maximum number of steps in each episode
+    Parameters
+    ----------
+    env: gym.core.Environment
+      Environment to play on. Must have nS, nA, and P as
+      attributes.
+    Policy: np.array of shape [env.nS]
+      The action to take at a given state
+    nb_episodes: int
+      number of episodes to evaluate over
+    max_steps: int
+      maximum number of steps in each episode
     """
     sum_returns = 0
     for i in range(nb_episodes):
@@ -416,8 +429,11 @@ def test_performance(env, policy, nb_episodes=500, max_steps=500):
                 sum_returns += reward
                 break
 
-    print("The success rate of the policy across {} episodes was {:.2f} percent.".format(nb_episodes,
-                                                                                         sum_returns / nb_episodes * 100))
+    print(
+        "The success rate of the policy across {} episodes was {:.2f} percent.".format(
+            nb_episodes, sum_returns / nb_episodes * 100
+        )
+    )
 
 
 # %%
