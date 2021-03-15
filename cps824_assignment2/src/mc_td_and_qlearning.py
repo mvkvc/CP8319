@@ -1,9 +1,9 @@
 # %%
 ### MDP Value Iteration and Policy Iteration
 
-
 import numpy as np
 import gym
+import json
 import time
 from lake_envs import *
 from tqdm import trange
@@ -292,7 +292,7 @@ def mc_glie(env, iterations=1000, gamma=0.9):
 
 
 # %%
-def td_sarsa(env, iterations=1000, gamma=0.9, alpha=0.1, r_factor=1):
+def td_sarsa(env, iterations=1000, gamma=0.9, alpha=0.1):
     """This function implements the temporal-difference SARSA policy iteration for finding
     the optimal policy.
 
@@ -333,7 +333,8 @@ def td_sarsa(env, iterations=1000, gamma=0.9, alpha=0.1, r_factor=1):
         done = False
         while not done:
             new_state, reward, done, _ = env.step(action)
-            reward = reward * r_factor
+            if new_state in hole_states:
+                reward = -1
             new_action = sample_action(policy, new_state)
             Q_value[state, action] = Q_value[state, action] + alpha * (
                 reward
@@ -352,7 +353,7 @@ def td_sarsa(env, iterations=1000, gamma=0.9, alpha=0.1, r_factor=1):
 
 
 # %%
-def qlearning(env, iterations=1000, gamma=0.9, alpha=0.1, r_factor=1):
+def qlearning(env, iterations=1000, gamma=0.9, alpha=0.1):
     """This function implements the Q-Learning policy iteration for finding
     the optimal policy.
 
@@ -391,7 +392,8 @@ def qlearning(env, iterations=1000, gamma=0.9, alpha=0.1, r_factor=1):
         while not done:
             action = sample_action(policy, state)
             new_state, reward, done, _ = env.step(action)
-            reward = reward * r_factor
+            if new_state in hole_states:
+                reward = -1
             # new_action = sample_action(policy, new_state)
             Q_value[state, action] = Q_value[state, action] + alpha * (
                 reward + gamma * (np.max(Q_value[new_state])) - Q_value[state, action]
@@ -530,83 +532,91 @@ if __name__ == "__main__":
     time.sleep(0.5)
     env = gym.make("Stochastic-4x4-FrozenLake-v0")
 
-    def test_parameters(gamma, alpha, r_factor, iterations=1000, output=True):
+    def test_parameters(gamma, alpha, iterations=1000, output=True, render=False):
         print("\n" + "-" * 25 + "\nBeginning Temporal-Difference\n" + "-" * 25)
         td_acc = []
         for iter in range(0, 10):
-            Q_td, policy_td = td_sarsa(env, iterations, gamma[0], alpha[0], r_factor[0])
+            Q_td, policy_td = td_sarsa(env, iterations, gamma[0], alpha[0])
             acc = test_performance(env, policy_td, output=False)
             td_acc.append(acc)
             print("Iteration {} with accuracy: {:.2f}".format(iter + 1, acc))
         avg_td = np.mean(td_acc)
         var_td = np.var(td_acc)
-        # print("The average accuracy is {:.2f} with variance {:.2f}".format(avg_td, var_td))
+        print(
+            "The average accuracy is {:.2f} with variance {:.2f}".format(avg_td, var_td)
+        )
+        time.sleep(0.5)
+        if render:
+            render_single(env, policy_td, 100)  # uncomment to see a single episode
 
         print("\n" + "-" * 25 + "\nBeginning Q-Learning\n" + "-" * 25)
-        q_acc = []
+        ql_acc = []
         for iter in range(0, 10):
-            Q_ql, policy_ql = qlearning(
-                env, iterations, gamma[1], alpha[1], r_factor[1]
-            )
+            Q_ql, policy_ql = qlearning(env, iterations, gamma[1], alpha[1])
             acc = test_performance(env, policy_ql, output=False)
-            q_acc.append(acc)
+            ql_acc.append(acc)
             print("Iteration {} with accuracy: {:.2f}".format(iter + 1, acc))
-        avg_q = np.mean(q_acc)
-        var_q = np.var(q_acc)
-        # print("The average accuracy is {:.2f} with variance {:.2f}".format(avg_q, var_q))
+        avg_ql = np.mean(ql_acc)
+        var_ql = np.var(ql_acc)
+        print(
+            "The average accuracy is {:.2f} with variance {:.2f}".format(avg_ql, var_ql)
+        )
+        time.sleep(0.5)
+        if render:
+            render_single(env, policy_td, 100)  # uncomment to see a single episode
 
         if output:
             print("")
             print(
-                "Using gamma {}, alpha {}, r_factor {} the resulting var, acc is {:.2f}, {:.2f} for TD and {:.2f}, {:.2f} for Q".format(
-                    gamma, alpha, r_factor, avg_td, var_td, avg_q, var_q
+                "Using gamma {} and alpha {} the resulting var, acc is [{:.2f}, {:.2f}] for TD and [{:.2f}, {:.2f}] for Q".format(
+                    gamma, alpha, avg_td, var_td, avg_ql, var_ql
                 )
             )
-        return avg_td, avg_q
+        return avg_td, avg_ql
 
     iterations = 1000
     # param_g = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
-    param_g = [0.9]
     # param_a = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
-    param_a = [0.6, 0.7, 0.8, 0.9]
-    param_r = [1]
+    param_g = [0.85, 0.9, 0.95]
+    param_a = [0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95]
 
-    n_comb = len(param_g) * len(param_a) * len(param_r)
-    best_params_td = {"gamma": 0, "alpha": 0, "r_factor": 0}
-    best_params_q = {"gamma": 0, "alpha": 0, "r_factor": 0}
+    n_comb = len(param_g) * len(param_a)
+    best_params = {"gamma_td": [], "gamma_ql": [], "alpha_td": [], "alpha_ql": []}
     best_td = 0
-    best_q = 0
+    best_ql = 0
     counter = 0
 
-    for gamma in param_g:
-        for alpha in param_a:
-            for r_factor in param_r:
+    test = False
+    if test:
+        for gamma in param_g:
+            for alpha in param_a:
                 counter += 1
-                avg_td, avg_q = test_parameters(
-                    [gamma, gamma], [alpha, alpha], [r_factor, r_factor], output=False
-                )
-                print("")
                 print(
-                    "Iteration {}/{}  testing {}, alpha {}, r_factor {}".format(
-                        counter, n_comb, gamma, alpha, r_factor
+                    "Iteration {}/{}  testing {}, alpha {}".format(
+                        counter, n_comb, gamma, alpha
                     )
                 )
-                if avg_td > best_td:
-                    best_params_td.update(
-                        {"gamma": gamma, "alpha": alpha, "r_factor": r_factor}
-                    )
-                    print("New best avg TD result {:.2f}".format(avg_td))
+                avg_td, avg_ql = test_parameters(
+                    [gamma, gamma], [alpha, alpha], output=False
+                )
+                if avg_td >= best_td:
+                    best_params["gamma_td"].append(gamma)
+                    best_params["alpha_td"].append(alpha)
+                    print("New or equal best avg TD result {:.2f}".format(avg_td))
                     best_td = avg_td
-                if avg_q > best_q:
-                    best_params_q.update(
-                        {"gamma": gamma, "alpha": alpha, "r_factor": r_factor}
-                    )
-                    print("New best avg Q  result {:.2f}".format(avg_q))
-                    best_q = avg_q
+                if avg_ql >= best_ql:
+                    best_params["gamma_ql"].append(gamma)
+                    best_params["alpha_ql"].append(alpha)
+                    print("New or equal best avg Q  result {:.2f}".format(avg_ql))
+                    best_ql = avg_ql
+                print("")
+
+        with open("params.txt", "w") as file:
+            file.write(json.dumps(best_params))
 
     _, _ = test_parameters(
-        100000,
-        [best_params_td["gamma"], best_params_q["gamma"]],
-        [best_params_td["alpha"], best_params_q["alpha"]],
-        [best_params_td["r_factor"], best_params_q["r_factor"]]
+        [0.9, 0.9],
+        [0.65, 0.9],
+        iterations=10000,
+        # iterations=100000,
     )
