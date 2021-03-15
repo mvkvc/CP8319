@@ -5,7 +5,8 @@
 import numpy as np
 import gym
 import time
-from cps824_assignment2.src.lake_envs import *
+from lake_envs import *
+from tqdm import trange
 
 np.set_printoptions(precision=3)
 
@@ -103,12 +104,10 @@ def generate_episode(env, policy, max_steps=500):
     # YOUR IMPLEMENTATION HERE #
     num_steps = 0
     while num_steps < max_steps:
-        env.render()
-        time.sleep(1)
         action, reward, new_state, done = take_one_step(env, policy, curr_state)
         episode.append((curr_state, action, reward))
         if done:
-            print("Episode finished after {} timesteps".format(num_steps + 1))
+            # print("Episode finished after {} timesteps".format(num_steps + 1))
             break
         curr_state = new_state
         num_steps += 1
@@ -154,11 +153,11 @@ def generate_returns(episode, gamma=0.9):
     # make this much easier to implement in a few lines of code.
     # You don't need to use this approach however and use whatever works for you. #
     returns = [j[2] for j in episode]
-    for iter in range(len(epi_returns)):
-        powers = np.arange(0, len(epi_returns) - iter) + 1
+    for step in range(len(epi_returns)):
+        powers = np.arange(0, len(epi_returns) - step) + 1
         gamma_sq = gamma ** powers
-        step_returns = returns[iter:]
-        epi_returns[iter] = np.dot(step_returns, gamma_sq ** powers)
+        step_returns = returns[step:]
+        epi_returns[step] = np.dot(step_returns, gamma_sq ** powers)
     ############################
     return epi_returns
 
@@ -196,14 +195,14 @@ def mc_policy_evaluation(env, policy, Q_value, n_visits, gamma=0.9):
     visit_flag = np.zeros((nS, nA))
     ############################
     # YOUR IMPLEMENTATION HERE #
-    for iter in range(len(episode)):  # For every episode
-        state = episode[iter][0]
-        action = episode[iter][1]
+    for step in range(len(episode)):  # For every episode
+        state = episode[step][0]
+        action = episode[step][1]
         n_visits[state, action] += 1
         if visit_flag[state, action] < 1:  # Check if visited before
             Q_value[state, action] = Q_value[state, action] + (
                 1 / n_visits[state, action]
-            ) * (returns[iter] - Q_value[state, action])
+            ) * (returns[step] - Q_value[state, action])
         visit_flag[state, action] += 1
     ############################
     return Q_value, n_visits
@@ -240,7 +239,7 @@ def epsilon_greedy_policy_improve(Q_value, nS, nA, epsilon):
     #     THIS IS IMPORTANT FOR EXPLORATION. This might prove useful:
     #     https://stackoverflow.com/questions/17568612/how-to-make-numpy-argmax-return-all-occurrences-of-the-maximum
     # np.argwhere(a == np.amax(a)).flatten().tolist())
-    for state in range(len(nS)):
+    for state in range(nS):
         best_actions = (
             np.argwhere(Q_value[state, :] == np.amax(Q_value[state, :]))
             .flatten()
@@ -282,18 +281,18 @@ def mc_glie(env, iterations=1000, gamma=0.9):
     ############################
     # YOUR IMPLEMENTATION HERE #
     # HINT: Don't forget to decay epsilon according to GLIE
-    # Decay according to e = 1/i
+    # for iter in trange(0, iterations):
     for iter in range(0, iterations):
-        mc_policy_evaluation(env, policy, Q_value, n_visits, gamma=0.9)
+        mc_policy_evaluation(env, policy, Q_value, n_visits, gamma)
+        epsilon = 1 / (iter + 1)
         epsilon_greedy_policy_improve(Q_value, nS, nA, epsilon)
-        epsilon = 1/iter+1
     ############################
     det_policy = np.argmax(Q_value, axis=1)
     return Q_value, det_policy
 
 
 # %%
-def td_sarsa(env, iterations=1000, gamma=0.9, alpha=0.1):
+def td_sarsa(env, iterations=1000, gamma=0.9, alpha=0.1, r_factor=1):
     """This function implements the temporal-difference SARSA policy iteration for finding
     the optimal policy.
 
@@ -325,14 +324,35 @@ def td_sarsa(env, iterations=1000, gamma=0.9, alpha=0.1):
     ############################
     # YOUR IMPLEMENTATION HERE #
     # HINT: Don't forget to decay epsilon according to GLIE
-    for i in range(0, iterations)
+    # for iter in trange(0, iterations):
+    for iter in range(0, iterations):
+        epsilon = 1 / (iter + 1)
+        policy = epsilon_greedy_policy_improve(Q_value, nS, nA, epsilon)
+        state = env.reset()
+        action = sample_action(policy, s_t1)
+        done = False
+        while not done:
+            new_state, reward, done, _ = env.step(action)
+            reward = reward * r_factor
+            new_action = sample_action(policy, new_state)
+            Q_value[state, action] = Q_value[state, action] + alpha * (
+                reward
+                + gamma * (Q_value[new_state, new_action])
+                - Q_value[state, action]
+            )
+            state = new_state
+            action = new_action
     ############################
     det_policy = np.argmax(Q_value, axis=1)
     return Q_value, det_policy
 
 
+# epsilon_greedy_policy_improve(Q_value, nS, nA, epsilon)
+# return new_policy
+
+
 # %%
-def qlearning(env, iterations=1000, gamma=0.9, alpha=0.1):
+def qlearning(env, iterations=1000, gamma=0.9, alpha=0.1, r_factor=1):
     """This function implements the Q-Learning policy iteration for finding
     the optimal policy.
 
@@ -362,7 +382,21 @@ def qlearning(env, iterations=1000, gamma=0.9, alpha=0.1):
     ############################
     # YOUR IMPLEMENTATION HERE #
     # HINT: Don't forget to decay epsilon according to GLIE
-
+    # for iter in trange(0, iterations):
+    for iter in range(0, iterations):
+        epsilon = 1 / (iter + 1)
+        policy = epsilon_greedy_policy_improve(Q_value, nS, nA, epsilon)
+        state = env.reset()
+        done = False
+        while not done:
+            action = sample_action(policy, state)
+            new_state, reward, done, _ = env.step(action)
+            reward = reward * r_factor
+            # new_action = sample_action(policy, new_state)
+            Q_value[state, action] = Q_value[state, action] + alpha * (
+                reward + gamma * (np.max(Q_value[new_state])) - Q_value[state, action]
+            )
+            state = new_state
     ############################
     det_policy = np.argmax(Q_value, axis=1)
     return Q_value, det_policy
@@ -401,7 +435,7 @@ def render_single(env, policy, max_steps=100):
 
 
 # %%
-def test_performance(env, policy, nb_episodes=500, max_steps=500):
+def test_performance(env, policy, nb_episodes=500, max_steps=500, output=True):
     """
     This function evaluate the success rate of the policy in reaching
     the goal.
@@ -429,11 +463,15 @@ def test_performance(env, policy, nb_episodes=500, max_steps=500):
                 sum_returns += reward
                 break
 
-    print(
-        "The success rate of the policy across {} episodes was {:.2f} percent.".format(
-            nb_episodes, sum_returns / nb_episodes * 100
+    accuracy = sum_returns / nb_episodes * 100
+    if output:
+        print(
+            "The success rate of the policy across {} episodes was {:.2f} percent.".format(
+                nb_episodes, accuracy
+            )
         )
-    )
+
+    return accuracy
 
 
 # %%
@@ -442,6 +480,8 @@ def test_performance(env, policy, nb_episodes=500, max_steps=500):
 # You may change the parameters in the functions below
 if __name__ == "__main__":
     # comment/uncomment these lines to switch between deterministic/stochastic environments
+    print("\n" + "-" * 25 + "\nUsing Deterministic Environment\n" + "-" * 25)
+    time.sleep(0.5)
     env = gym.make("Deterministic-4x4-FrozenLake-v0")
     # env = gym.make("Stochastic-4x4-FrozenLake-v0")
 
@@ -459,3 +499,114 @@ if __name__ == "__main__":
     Q_ql, policy_ql = qlearning(env, iterations=1000, gamma=0.9, alpha=0.1)
     test_performance(env, policy_ql)
     # render_single(env, policy_ql, 100) # uncomment to see a single episode
+
+    # comment/uncomment these lines to switch between deterministic/stochastic environments
+    print("\n" + "-" * 25 + "\nUsing Stochastic Environment\n" + "-" * 25)
+    time.sleep(0.5)
+    # env = gym.make("Deterministic-4x4-FrozenLake-v0")
+    env = gym.make("Stochastic-4x4-FrozenLake-v0")
+
+    print("\n" + "-" * 25 + "\nBeginning First-Visit Monte Carlo\n" + "-" * 25)
+    Q_mc, policy_mc = mc_glie(env, iterations=1000, gamma=0.9)
+    test_performance(env, policy_mc)
+    # render_single(env, policy_mc, 100)  # uncomment to see a single episode
+
+    print("\n" + "-" * 25 + "\nBeginning Temporal-Difference\n" + "-" * 25)
+    Q_td, policy_td = td_sarsa(env, iterations=1000, gamma=0.9, alpha=0.1)
+    test_performance(env, policy_td)
+    # render_single(env, policy_td, 100)  # uncomment to see a single episode
+
+    print("\n" + "-" * 25 + "\nBeginning Q-Learning\n" + "-" * 25)
+    Q_ql, policy_ql = qlearning(env, iterations=1000, gamma=0.9, alpha=0.1)
+    test_performance(env, policy_ql)
+    # render_single(env, policy_ql, 100)  # uncomment to see a single episode
+
+    print(
+        "\n"
+        + "-" * 25
+        + "\nUsing Stochastic Environment With Improvements\n"
+        + "-" * 25
+    )
+    time.sleep(0.5)
+    env = gym.make("Stochastic-4x4-FrozenLake-v0")
+
+    def test_parameters(gamma, alpha, r_factor, iterations=1000, output=True):
+        print("\n" + "-" * 25 + "\nBeginning Temporal-Difference\n" + "-" * 25)
+        td_acc = []
+        for iter in range(0, 10):
+            Q_td, policy_td = td_sarsa(env, iterations, gamma[0], alpha[0], r_factor[0])
+            acc = test_performance(env, policy_td, output=False)
+            td_acc.append(acc)
+            print("Iteration {} with accuracy: {:.2f}".format(iter + 1, acc))
+        avg_td = np.mean(td_acc)
+        var_td = np.var(td_acc)
+        # print("The average accuracy is {:.2f} with variance {:.2f}".format(avg_td, var_td))
+
+        print("\n" + "-" * 25 + "\nBeginning Q-Learning\n" + "-" * 25)
+        q_acc = []
+        for iter in range(0, 10):
+            Q_ql, policy_ql = qlearning(
+                env, iterations, gamma[1], alpha[1], r_factor[1]
+            )
+            acc = test_performance(env, policy_ql, output=False)
+            q_acc.append(acc)
+            print("Iteration {} with accuracy: {:.2f}".format(iter + 1, acc))
+        avg_q = np.mean(q_acc)
+        var_q = np.var(q_acc)
+        # print("The average accuracy is {:.2f} with variance {:.2f}".format(avg_q, var_q))
+
+        if output:
+            print("")
+            print(
+                "Using gamma {}, alpha {}, r_factor {} the resulting var, acc is {:.2f}, {:.2f} for TD and {:.2f}, {:.2f} for Q".format(
+                    gamma, alpha, r_factor, avg_td, var_td, avg_q, var_q
+                )
+            )
+        return avg_td, avg_q
+
+    iterations = 1000
+    # param_g = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+    param_g = [0.9]
+    # param_a = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+    param_a = [0.6, 0.7, 0.8, 0.9]
+    param_r = [1]
+
+    n_comb = len(param_g) * len(param_a) * len(param_r)
+    best_params_td = {"gamma": 0, "alpha": 0, "r_factor": 0}
+    best_params_q = {"gamma": 0, "alpha": 0, "r_factor": 0}
+    best_td = 0
+    best_q = 0
+    counter = 0
+
+    for gamma in param_g:
+        for alpha in param_a:
+            for r_factor in param_r:
+                counter += 1
+                avg_td, avg_q = test_parameters(
+                    [gamma, gamma], [alpha, alpha], [r_factor, r_factor], output=False
+                )
+                print("")
+                print(
+                    "Iteration {}/{}  testing {}, alpha {}, r_factor {}".format(
+                        counter, n_comb, gamma, alpha, r_factor
+                    )
+                )
+                if avg_td > best_td:
+                    best_params_td.update(
+                        {"gamma": gamma, "alpha": alpha, "r_factor": r_factor}
+                    )
+                    print("New best avg TD result {:.2f}".format(avg_td))
+                    best_td = avg_td
+                if avg_q > best_q:
+                    best_params_q.update(
+                        {"gamma": gamma, "alpha": alpha, "r_factor": r_factor}
+                    )
+                    print("New best avg Q  result {:.2f}".format(avg_q))
+                    best_q = avg_q
+
+    _, _ = test_parameters(
+        100000,
+        [best_params_td["gamma"], best_params_q["gamma"]],
+        [best_params_td["alpha"], best_params_q["alpha"]],
+        [best_params_td["r_factor"], best_params_q["r_factor"]]
+    )

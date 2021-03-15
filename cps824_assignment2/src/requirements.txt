@@ -2,3 +2,4 @@ gym==0.10.9
 matplotlib
 numpy
 scipy
+trange
