@@ -1,2 +1,8 @@
 tasks:
   - init: pip install -r ./requirements.txt
+
+vscode:
+  extensions:
+    - ms-python.python@2020.10.332292344:5ctthQ25Qni5/aAuOIUTYQ==
+    - teabyii.ayu@0.20.1:fJGIE2FGGQwXsOZ/boL0NA==
+    - tabnine.tabnine-vscode@3.2.8:A1WTvG0vG7bqcRW1QDXI1g==
