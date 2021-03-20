@@ -574,45 +574,45 @@ if __name__ == "__main__":
             )
         return avg_td, avg_ql
 
-    iterations = 1000
-    # param_g = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
-    # param_a = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
-    param_g = [0.85, 0.9, 0.95]
-    param_a = [0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95]
+    # iterations = 1000
+    # # param_g = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+    # # param_a = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+    # param_g = [0.85, 0.9, 0.95]
+    # param_a = [0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95]
 
-    n_comb = len(param_g) * len(param_a)
-    best_params = {"gamma_td": [], "gamma_ql": [], "alpha_td": [], "alpha_ql": []}
-    best_td = 0
-    best_ql = 0
-    counter = 0
+    # n_comb = len(param_g) * len(param_a)
+    # best_params = {"gamma_td": [], "gamma_ql": [], "alpha_td": [], "alpha_ql": []}
+    # best_td = 0
+    # best_ql = 0
+    # counter = 0
 
-    test = False
-    if test:
-        for gamma in param_g:
-            for alpha in param_a:
-                counter += 1
-                print(
-                    "Iteration {}/{}  testing {}, alpha {}".format(
-                        counter, n_comb, gamma, alpha
-                    )
-                )
-                avg_td, avg_ql = test_parameters(
-                    [gamma, gamma], [alpha, alpha], output=False
-                )
-                if avg_td >= best_td:
-                    best_params["gamma_td"].append(gamma)
-                    best_params["alpha_td"].append(alpha)
-                    print("New or equal best avg TD result {:.2f}".format(avg_td))
-                    best_td = avg_td
-                if avg_ql >= best_ql:
-                    best_params["gamma_ql"].append(gamma)
-                    best_params["alpha_ql"].append(alpha)
-                    print("New or equal best avg Q  result {:.2f}".format(avg_ql))
-                    best_ql = avg_ql
-                print("")
+    # test = False
+    # if test:
+    #     for gamma in param_g:
+    #         for alpha in param_a:
+    #             counter += 1
+    #             print(
+    #                 "Iteration {}/{}  testing {}, alpha {}".format(
+    #                     counter, n_comb, gamma, alpha
+    #                 )
+    #             )
+    #             avg_td, avg_ql = test_parameters(
+    #                 [gamma, gamma], [alpha, alpha], output=False
+    #             )
+    #             if avg_td >= best_td:
+    #                 best_params["gamma_td"].append(gamma)
+    #                 best_params["alpha_td"].append(alpha)
+    #                 print("New or equal best avg TD result {:.2f}".format(avg_td))
+    #                 best_td = avg_td
+    #             if avg_ql >= best_ql:
+    #                 best_params["gamma_ql"].append(gamma)
+    #                 best_params["alpha_ql"].append(alpha)
+    #                 print("New or equal best avg Q  result {:.2f}".format(avg_ql))
+    #                 best_ql = avg_ql
+    #             print("")
 
-        with open("params.txt", "w") as file:
-            file.write(json.dumps(best_params))
+    #     with open("params.txt", "w") as file:
+    #         file.write(json.dumps(best_params))
 
     _, _ = test_parameters(
         [0.9, 0.9],
