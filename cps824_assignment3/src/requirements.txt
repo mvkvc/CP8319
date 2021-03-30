@@ -3,7 +3,7 @@ atari-py
 matplotlib
 numpy
 scipy
-pytorch
+torch
 torchvision
 torchaudio
 tensorboard

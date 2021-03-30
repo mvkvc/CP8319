@@ -63,10 +63,12 @@ class NatureQN(Linear):
         num_actions = self.env.action_space.n
         strides = np.array([4, 2, 1])  # The stride size for every conv2d layer
         filter_sizes = np.array([8, 4, 3])  # The filter size for every conv2d layer
-        numb_filters = np.array([32, 64, 64])  # number of filters for every conv2d layer
+        numb_filters = np.array(
+            [32, 64, 64]
+        )  # number of filters for every conv2d layer
         ##############################################################
         ################ YOUR CODE HERE - 25-30 lines lines ################
-
+        # ``
         ##############################################################
         ######################## END YOUR CODE #######################
 
@@ -89,8 +91,8 @@ class NatureQN(Linear):
         """
         out = None
         ##############################################################
-        ################ YOUR CODE HERE - 4-5 lines lines ################
-        
+        ################ YOUR CODE HERE - 4-5 lines lines ############
+        # ``
         ##############################################################
         ######################## END YOUR CODE #######################
         return out
@@ -99,16 +101,16 @@ class NatureQN(Linear):
 """
 Use deep Q network for test environment.
 """
-if __name__ == '__main__':
+if __name__ == "__main__":
     env = EnvTest((8, 8, 6))
 
     # exploration strategy
-    exp_schedule = LinearExploration(env, config.eps_begin,
-            config.eps_end, config.eps_nsteps)
+    exp_schedule = LinearExploration(
+        env, config.eps_begin, config.eps_end, config.eps_nsteps
+    )
 
     # learning rate schedule
-    lr_schedule  = LinearSchedule(config.lr_begin, config.lr_end,
-            config.lr_nsteps)
+    lr_schedule = LinearSchedule(config.lr_begin, config.lr_end, config.lr_nsteps)
 
     # train model
     model = NatureQN(env, config)

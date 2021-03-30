@@ -14,3 +14,5 @@ null/
 **/.dotty-ide.json
 **/.DS_Store
 **/.idea
+.vscode/
+cps824_assignment3/src/utils/__pycache__/

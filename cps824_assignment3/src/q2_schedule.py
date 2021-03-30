@@ -10,11 +10,10 @@ class LinearSchedule(object):
             eps_end: end exploration
             nsteps: number of steps between the two values of eps
         """
-        self.epsilon        = eps_begin
-        self.eps_begin      = eps_begin
-        self.eps_end        = eps_end
-        self.nsteps         = nsteps
-
+        self.epsilon = eps_begin
+        self.eps_begin = eps_begin
+        self.eps_end = eps_end
+        self.nsteps = nsteps
 
     def update(self, t):
         """
@@ -33,7 +32,7 @@ class LinearSchedule(object):
         """
         ##############################################################
         ################ YOUR CODE HERE - 3-4 lines ##################
-        
+        self.epsilon = np.interp(t, [0, self.nsteps], [self.eps_begin, self.eps_end])
         ##############################################################
         ######################## END YOUR CODE ############## ########
 
@@ -52,7 +51,6 @@ class LinearExploration(LinearSchedule):
         """
         self.env = env
         super(LinearExploration, self).__init__(eps_begin, eps_end, nsteps)
-
 
     def get_action(self, best_action):
         """
@@ -76,10 +74,13 @@ class LinearExploration(LinearSchedule):
         """
         ##############################################################
         ################ YOUR CODE HERE - 4-5 lines ##################
-        
+        randn = np.random.uniform(0, 1)
+        if randn <= self.epsilon:
+            return self.env.action_space.sample()
+        else:
+            return best_action
         ##############################################################
         ######################## END YOUR CODE #######################
-
 
 
 def test1():

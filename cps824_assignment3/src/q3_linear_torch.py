@@ -10,13 +10,16 @@ import logging
 from configs.q3_linear import config
 import os
 import copy
-os.environ['KMP_DUPLICATE_LIB_OK']='True'
-logging.getLogger('matplotlib.font_manager').disabled = True
+
+os.environ["KMP_DUPLICATE_LIB_OK"] = "True"
+logging.getLogger("matplotlib.font_manager").disabled = True
+
 
 class Linear(DQN):
     """
     Implement Fully Connected with Tensorflow
     """
+
     def initialize_models(self):
         """Creates the 2 separate networks (Q network and Target network). The input
         to these models will be an img_height * img_width image
@@ -37,12 +40,13 @@ class Linear(DQN):
 
         ##############################################################
         ################ YOUR CODE HERE (2 lines) ##################
-
+        # TODO: Review
+        self.q_network = nn.Linear(input_size, num_actions)
+        self.target_network = nn.Linear(input_size, num_actions)
         ##############################################################
         ######################## END YOUR CODE #######################
 
-
-    def get_q_values(self, state, network='q_network'):
+    def get_q_values(self, state, network="q_network"):
         """
         Returns Q values for all actions
 
@@ -63,12 +67,11 @@ class Linear(DQN):
 
         ##############################################################
         ################ YOUR CODE HERE - 3-5 lines ##################
-
+        # TODO: Review
         ##############################################################
         ######################## END YOUR CODE #######################
 
         return out
-
 
     def update_target(self):
         """
@@ -87,13 +90,18 @@ class Linear(DQN):
 
         ##############################################################
         ################### YOUR CODE HERE - 1-2 lines ###############
-
+        # TODO: Review
         ##############################################################
         ######################## END YOUR CODE #######################
 
-
-    def calc_loss(self, q_values : Tensor, target_q_values : Tensor,
-                    actions : Tensor, rewards: Tensor, done_mask: Tensor) -> Tensor:
+    def calc_loss(
+        self,
+        q_values: Tensor,
+        target_q_values: Tensor,
+        actions: Tensor,
+        rewards: Tensor,
+        done_mask: Tensor,
+    ) -> Tensor:
         """
         Calculate the MSE loss of this step.
         The loss for an example is defined as:
@@ -122,7 +130,7 @@ class Linear(DQN):
             You can treat `done_mask` as a 0 and 1 where 0 is not done and 1 is done using torch.type as
             done below
 
-            To extract Q(a) for a specific "a" you can use the torch.sum and torch.nn.functional.one_hot. 
+            To extract Q(a) for a specific "a" you can use the torch.sum and torch.nn.functional.one_hot.
             Think about how.
         """
         # you may need this variable
@@ -132,7 +140,7 @@ class Linear(DQN):
         actions = actions.type(torch.int64)
         ##############################################################
         ##################### YOUR CODE HERE - 3-5 lines #############
-
+        # ``
         ##############################################################
         ######################## END YOUR CODE #######################
         return loss
@@ -153,17 +161,16 @@ class Linear(DQN):
         ######################## END YOUR CODE #######################
 
 
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     env = EnvTest((5, 5, 1))
 
     # exploration strategy
-    exp_schedule = LinearExploration(env, config.eps_begin,
-            config.eps_end, config.eps_nsteps)
+    exp_schedule = LinearExploration(
+        env, config.eps_begin, config.eps_end, config.eps_nsteps
+    )
 
     # learning rate schedule
-    lr_schedule  = LinearSchedule(config.lr_begin, config.lr_end,
-            config.lr_nsteps)
+    lr_schedule = LinearSchedule(config.lr_begin, config.lr_end, config.lr_nsteps)
 
     # train model
     model = Linear(env, config)
