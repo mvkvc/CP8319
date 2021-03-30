@@ -68,6 +68,16 @@ class Linear(DQN):
         ##############################################################
         ################ YOUR CODE HERE - 3-5 lines ##################
         # TODO: Review
+        state_flat = torch.flatten(state)
+        # state_flat = torch.flatten(state, start_dim=1)
+        # state_flat = torch.flatten(input, start_dim=0, end_dim=-1)
+
+        if network == "q_network":
+            return self.q_network(state_flat)
+        elif network == "target_network":
+            return self.target_network(state_flat)
+        else:
+            raise ValueError("Incorrect network type.")
         ##############################################################
         ######################## END YOUR CODE #######################
 
@@ -91,6 +101,8 @@ class Linear(DQN):
         ##############################################################
         ################### YOUR CODE HERE - 1-2 lines ###############
         # TODO: Review
+        state_saved = self.q_network.state_dict()
+        self.target_network.load_state_dict(state_saved)
         ##############################################################
         ######################## END YOUR CODE #######################
 
@@ -140,7 +152,11 @@ class Linear(DQN):
         actions = actions.type(torch.int64)
         ##############################################################
         ##################### YOUR CODE HERE - 3-5 lines #############
-        # ``
+        # Q_samp(s) = r if done
+        #                 = r + gamma * max_a' Q_target(s', a') otherwise
+        #     loss = (Q_samp(s) - Q(s, a))^2
+
+        loss
         ##############################################################
         ######################## END YOUR CODE #######################
         return loss
