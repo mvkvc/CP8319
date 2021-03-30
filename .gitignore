@@ -15,4 +15,5 @@ null/
 **/.DS_Store
 **/.idea
 .vscode/
-cps824_assignment3/src/utils/__pycache__/
+**/__pycache__/
+**/.ipynb_checkpoints/
