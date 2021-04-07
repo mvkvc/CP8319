@@ -11,3 +11,4 @@ dependencies:
   - matplotlib
   - gym
   - tensorboard
+  - pip
