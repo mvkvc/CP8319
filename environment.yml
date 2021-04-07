@@ -5,10 +5,13 @@ channels:
   - defaults
 dependencies:
   - python=3.8
-  - torchvision
-  - torchaudio
-  - pytorch
-  - matplotlib
-  - gym
-  - tensorboard
   - pip
+    - pip:
+    - torch
+    - gym
+    - numpy
+    - pandas
+    - matplotlib
+    - tensorboard
+    - gym-anytrading
+    - ipykernel
