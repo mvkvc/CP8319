@@ -37,10 +37,8 @@ class Linear(DQN):
         img_height, img_width, n_channels = state_shape
         input_size = img_height * img_width * n_channels * self.config.state_history
         num_actions = self.env.action_space.n
-
         ##############################################################
-        ################ YOUR CODE HERE (2 lines) ##################
-        # TODO: Review
+        ################ YOUR CODE HERE (2 lines) ####################
         self.q_network = nn.Linear(input_size, num_actions)
         self.target_network = nn.Linear(input_size, num_actions)
         ##############################################################
@@ -67,11 +65,9 @@ class Linear(DQN):
 
         ##############################################################
         ################ YOUR CODE HERE - 3-5 lines ##################
-        # TODO: Review
         state_flat = torch.flatten(state)
         # state_flat = torch.flatten(state, start_dim=1)
         # state_flat = torch.flatten(input, start_dim=0, end_dim=-1)
-
         if network == "q_network":
             return self.q_network(state_flat)
         elif network == "target_network":
@@ -80,7 +76,6 @@ class Linear(DQN):
             raise ValueError("Incorrect network type.")
         ##############################################################
         ######################## END YOUR CODE #######################
-
         return out
 
     def update_target(self):
@@ -100,19 +95,18 @@ class Linear(DQN):
 
         ##############################################################
         ################### YOUR CODE HERE - 1-2 lines ###############
-        # TODO: Review
         state_saved = self.q_network.state_dict()
         self.target_network.load_state_dict(state_saved)
         ##############################################################
         ######################## END YOUR CODE #######################
 
     def calc_loss(
-        self,
-        q_values: Tensor,
-        target_q_values: Tensor,
-        actions: Tensor,
-        rewards: Tensor,
-        done_mask: Tensor,
+            self,
+            q_values: Tensor,
+            target_q_values: Tensor,
+            actions: Tensor,
+            rewards: Tensor,
+            done_mask: Tensor,
     ) -> Tensor:
         """
         Calculate the MSE loss of this step.
@@ -153,10 +147,10 @@ class Linear(DQN):
         ##############################################################
         ##################### YOUR CODE HERE - 3-5 lines #############
         # Q_samp(s) = r if done
-        #                 = r + gamma * max_a' Q_target(s', a') otherwise
-        #     loss = (Q_samp(s) - Q(s, a))^2
-
-        loss
+        # = r + gamma * max_a' Q_target(s', a') otherwise
+        # loss = (Q_samp(s) - Q(s, a))^2
+        # F.one_hot()
+        # F.loss()
         ##############################################################
         ######################## END YOUR CODE #######################
         return loss
