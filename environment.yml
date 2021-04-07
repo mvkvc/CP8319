@@ -5,11 +5,11 @@ dependencies:
   - python=3.8
   - pip
     - pip:
-    - torch
-    - gym
-    - numpy
-    - pandas
-    - matplotlib
-    - tensorboard
-    - requests
-    - ipykernel
+      - torch
+      - gym
+      - numpy
+      - pandas
+      - matplotlib
+      - tensorboard
+      - requests
+      - ipykernel
