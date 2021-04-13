@@ -1,3 +1,4 @@
+#%%
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -11,7 +12,7 @@ import copy
 
 from configs.q4_nature import config
 
-
+#%%
 class NatureQN(Linear):
     """
     Implementing DeepMind's Nature paper. Here are the relevant urls.
@@ -63,12 +64,46 @@ class NatureQN(Linear):
         num_actions = self.env.action_space.n
         strides = np.array([4, 2, 1])  # The stride size for every conv2d layer
         filter_sizes = np.array([8, 4, 3])  # The filter size for every conv2d layer
-        numb_filters = np.array(
-            [32, 64, 64]
-        )  # number of filters for every conv2d layer
+        #numb_filters = np.array([32, 64, 64])  # number of filters for every conv2d layer
         ##############################################################
         ################ YOUR CODE HERE - 25-30 lines lines ################
-        # ``
+        # paddings_calc = ((strides - 1) * img_height - strides + filter_sizes) // 2
+        paddings = np.array([14, 5, 1])
+
+        self.q_network = nn.Sequential(
+            nn.Conv2d(n_channels * self.config.state_history, 32, kernel_size=8, stride=4, padding=14),
+            nn.ReLU(),
+            nn.Conv2d(32, 64, kernel_size=4, stride=2, padding=5),
+            nn.ReLU(),
+            nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(),
+            nn.Flatten(),
+            nn.Linear(4096, 512),
+            nn.ReLU(),
+            nn.Linear(512, num_actions)
+        )
+
+        self.target_network = nn.Sequential(
+            nn.Conv2d(n_channels * self.config.state_history, 32, kernel_size=8, stride=4, padding=14),
+            nn.ReLU(),
+            nn.Conv2d(32, 64, kernel_size=4, stride=2, padding=5),
+            nn.ReLU(),
+            nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1),
+            nn.ReLU(),
+            nn.Flatten(),
+            nn.Linear(4096, 512),
+            nn.ReLU(),
+            nn.Linear(512, num_actions)
+        )
+
+        # Find input shape for linear layers
+        # inp = torch.rand(config.batch_size, n_channels, img_height, img_width)
+        # out = self.q_network_cnn(inp)
+        # dim = out.shape[1]
+
+        # from torchsummary import summary
+        # summary(self.q_network_cnn, input_size=(n_channels * self.config.state_history, 8, 8))
+
         ##############################################################
         ######################## END YOUR CODE #######################
 
@@ -92,12 +127,25 @@ class NatureQN(Linear):
         out = None
         ##############################################################
         ################ YOUR CODE HERE - 4-5 lines lines ############
-        # ``
+        state_t = torch.FloatTensor(state)
+        state_t = torch.transpose(state_t, 1, 3)
+
+        if network == "q_network":
+            out = self.q_network(state_t)
+        elif network == "target_network":
+            out = self.target_network(state_t)
+        else:
+            raise ValueError("Incorrect network type.")
         ##############################################################
         ######################## END YOUR CODE #######################
         return out
 
+    def add_optimizer(self):
+        self.optimizer = torch.optim.Adam(
+            self.q_network.parameters(), lr=lr_schedule.epsilon
+        )
 
+#%%
 """
 Use deep Q network for test environment.
 """
@@ -115,3 +163,4 @@ if __name__ == "__main__":
     # train model
     model = NatureQN(env, config)
     model.run(exp_schedule, lr_schedule)
+#%%

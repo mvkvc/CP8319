@@ -17,3 +17,5 @@ null/
 .vscode/
 **/__pycache__/
 **/.ipynb_checkpoints/
+cps824_assignment3/src/results/q3_linear/events.out.tfevents.*
+cps824_assignment3/src/results/q4_nature/events.out.tfevents.*

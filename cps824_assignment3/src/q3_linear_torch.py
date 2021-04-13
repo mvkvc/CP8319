@@ -1,4 +1,7 @@
+#%%
 import torch
+
+# from torch._C import per_channel_affine_float_qparams
 import torch.nn as nn
 import torch.nn.functional as F
 
@@ -14,7 +17,7 @@ import copy
 os.environ["KMP_DUPLICATE_LIB_OK"] = "True"
 logging.getLogger("matplotlib.font_manager").disabled = True
 
-
+#%%
 class Linear(DQN):
     """
     Implement Fully Connected with Tensorflow
@@ -40,7 +43,7 @@ class Linear(DQN):
         ##############################################################
         ################ YOUR CODE HERE (2 lines) ####################
         self.q_network = nn.Linear(input_size, num_actions)
-        self.target_network = nn.Linear(input_size, num_actions)
+        self.target_network = copy.deepcopy(self.q_network)
         ##############################################################
         ######################## END YOUR CODE #######################
 
@@ -65,13 +68,11 @@ class Linear(DQN):
 
         ##############################################################
         ################ YOUR CODE HERE - 3-5 lines ##################
-        state_flat = torch.flatten(state)
-        # state_flat = torch.flatten(state, start_dim=1)
-        # state_flat = torch.flatten(input, start_dim=0, end_dim=-1)
+        state_flat = torch.flatten(state, 1)
         if network == "q_network":
-            return self.q_network(state_flat)
+            out = self.q_network(state_flat)
         elif network == "target_network":
-            return self.target_network(state_flat)
+            out = self.target_network(state_flat)
         else:
             raise ValueError("Incorrect network type.")
         ##############################################################
@@ -101,12 +102,12 @@ class Linear(DQN):
         ######################## END YOUR CODE #######################
 
     def calc_loss(
-            self,
-            q_values: Tensor,
-            target_q_values: Tensor,
-            actions: Tensor,
-            rewards: Tensor,
-            done_mask: Tensor,
+        self,
+        q_values: Tensor,
+        target_q_values: Tensor,
+        actions: Tensor,
+        rewards: Tensor,
+        done_mask: Tensor,
     ) -> Tensor:
         """
         Calculate the MSE loss of this step.
@@ -140,17 +141,17 @@ class Linear(DQN):
             Think about how.
         """
         # you may need this variable
-        num_actions = self.env.action_space.n
+        num_actions = self.env.action_space.n  # (5)
         gamma = self.config.gamma
-        done_mask = done_mask.type(torch.int)
-        actions = actions.type(torch.int64)
+        done_mask = done_mask.type(torch.int)  # (32)
+        actions = actions.type(torch.int64)  # (32, 5)
         ##############################################################
         ##################### YOUR CODE HERE - 3-5 lines #############
-        # Q_samp(s) = r if done
-        # = r + gamma * max_a' Q_target(s', a') otherwise
-        # loss = (Q_samp(s) - Q(s, a))^2
-        # F.one_hot()
-        # F.loss()
+        non_term = 1 - done_mask
+        Q_samp = rewards + non_term * gamma * torch.max(target_q_values, axis=1).values
+        ind_actions = torch.nn.functional.one_hot(actions, num_actions)
+        Q_sa = torch.sum(q_values * ind_actions, axis=1)
+        loss = torch.mean((Q_samp - Q_sa) ** 2)
         ##############################################################
         ######################## END YOUR CODE #######################
         return loss
@@ -166,11 +167,14 @@ class Linear(DQN):
         """
         ##############################################################
         #################### YOUR CODE HERE - 1 line #############
-
+        self.optimizer = torch.optim.Adam(
+            self.q_network.parameters(), lr=lr_schedule.epsilon
+        )
         ##############################################################
         ######################## END YOUR CODE #######################
 
 
+#%%
 if __name__ == "__main__":
     env = EnvTest((5, 5, 1))
 
