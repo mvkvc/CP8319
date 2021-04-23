@@ -83,26 +83,12 @@ class NatureQN(Linear):
             nn.Linear(512, num_actions)
         )
 
-        self.target_network = nn.Sequential(
-            nn.Conv2d(n_channels * self.config.state_history, 32, kernel_size=8, stride=4, padding=14),
-            nn.ReLU(),
-            nn.Conv2d(32, 64, kernel_size=4, stride=2, padding=5),
-            nn.ReLU(),
-            nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1),
-            nn.ReLU(),
-            nn.Flatten(),
-            nn.Linear(4096, 512),
-            nn.ReLU(),
-            nn.Linear(512, num_actions)
-        )
+        self.target_network = copy.deepcopy(self.q_network)
 
         # Find input shape for linear layers
         # inp = torch.rand(config.batch_size, n_channels, img_height, img_width)
         # out = self.q_network_cnn(inp)
         # dim = out.shape[1]
-
-        # from torchsummary import summary
-        # summary(self.q_network_cnn, input_size=(n_channels * self.config.state_history, 8, 8))
 
         ##############################################################
         ######################## END YOUR CODE #######################
